@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divorcy — the divorce predictor nobody asked for</title>
+<style>
+  :root {
+    --paper: #fbf6ec; --ink: #1d1a17; --muted: #6f675d; --line: #d9cfbd;
+    --red: #c2281c; --green: #2e7d4f; --card: #fffdf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.5 Georgia, "Times New Roman", serif;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { text-align: center; border-bottom: 3px double var(--ink); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { font-size: clamp(40px, 10vw, 64px); margin: 0; letter-spacing: -1px; line-height: 1; }
+  h1 span { color: var(--red); font-style: italic; }
+  .tag { margin: 8px 0 0; color: var(--muted); font-style: italic; }
+  form { display: grid; gap: 16px; }
+  label { display: grid; gap: 4px; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+  select, input {
+    font: 17px/1.3 Georgia, serif; padding: 10px 12px; width: 100%;
+    border: 1.5px solid var(--ink); border-radius: 0; background: var(--card); color: var(--ink);
+  }
+  select:focus, input:focus, button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
+  button {
+    font: bold 18px Georgia, serif; padding: 14px; cursor: pointer;
+    background: var(--ink); color: var(--paper); border: 0; text-transform: uppercase; letter-spacing: 2px;
+  }
+  button:hover { background: var(--red); }
+  button.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); font-size: 14px; padding: 10px; }
+  button.ghost:hover { background: var(--ink); color: var(--paper); }
+
+  #result { margin-top: 32px; border: 1.5px solid var(--ink); background: var(--card); padding: 24px; position: relative; }
+  #result[hidden] { display: none; }
+  .docket { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); text-align: center; }
+  .pct { font-size: clamp(72px, 22vw, 128px); font-weight: bold; text-align: center; line-height: 1; margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+  .verdict { text-align: center; font-size: 22px; font-style: italic; margin: 4px 0 20px; }
+  .stamp {
+    position: absolute; top: -18px; right: -6px; transform: rotate(12deg); background: var(--card);
+    border: 3px solid currentColor; padding: 2px 10px; font: bold 14px/1.4 "Courier New", monospace;
+    letter-spacing: 2px; text-transform: uppercase; opacity: .85;
+  }
+  .hi { color: var(--red); } .lo { color: var(--green); }
+  .factors { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--line); }
+  .factors li { padding: 12px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
+  .factors b { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  .factors .delta { font: bold 14px "Courier New", monospace; }
+  .factors p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 15px; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+  footer { margin-top: 32px; font-size: 13px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Divor<span>cy</span></h1>
+    <p class="tag">Six questions. One number. Zero legal standing.</p>
+  </header>
+
+  <form id="f">
+    <label>Occupation
+      <select name="occupation" required></select>
+    </label>
+    <div class="row">
+      <label>Household income (USD / year)
+        <select name="income" required></select>
+      </label>
+      <label>Religion
+        <select name="religion" required></select>
+      </label>
+    </div>
+    <label>Nationality
+      <select name="nationality" required></select>
+    </label>
+    <div class="row">
+      <label>Offspring
+        <input name="offspring" type="number" min="0" max="20" value="0" required>
+      </label>
+      <label>Body count
+        <input name="bodycount" type="number" min="0" max="999" value="3" required>
+      </label>
+    </div>
+    <button type="submit">Deliver the verdict</button>
+  </form>
+
+  <section id="result" hidden aria-live="polite">
+    <div class="docket">Court of Vibes · Case no. <span id="caseno"></span></div>
+    <div class="stamp" id="stamp"></div>
+    <div class="pct" id="pct"></div>
+    <div class="verdict" id="verdict"></div>
+    <ul class="factors" id="factors"></ul>
+    <div class="actions">
+      <button class="ghost" type="button" id="share">Copy result</button>
+      <button class="ghost" type="button" id="again">Appeal</button>
+    </div>
+  </section>
+
+  <footer>
+    For entertainment only. The weights are made up, loosely nodding at pop-sociology you half-remember.
+    Nothing is stored or sent anywhere. Do not show this to your spouse.
+  </footer>
+</main>
+
+<script>
+// Each option: [label, delta in log-odds, roast]. Positive delta = more doomed.
+const OCCUPATIONS = [
+  ["Software engineer", -0.35, "Too busy arguing with a compiler to argue at home."],
+  ["Doctor / surgeon", -0.3, "Never home, so technically never fighting."],
+  ["Actuary / accountant", -0.5, "Already ran the numbers. Divorce didn't pencil out."],
+  ["Teacher", -0.1, "Infinite patience, finite salary."],
+  ["Lawyer", 0.1, "Would win the divorce, which is its own kind of temptation."],
+  ["Finance / consulting", 0.15, "Married to the deck. The spouse is a stakeholder."],
+  ["Founder / entrepreneur", 0.35, "The startup is the first marriage."],
+  ["Nurse", 0.2, "Night shifts are undefeated."],
+  ["Bartender / hospitality", 0.6, "Professionally charming at 2 a.m. Risky."],
+  ["Flight attendant / pilot", 0.45, "Different time zone, different story."],
+  ["Artist / musician", 0.3, "The album about the breakup is already half written."],
+  ["Influencer / content creator", 0.55, "The apology video is in drafts."],
+  ["Military / police", 0.3, "Deployed, on shift, or at the gym."],
+  ["Sales", 0.25, "Always be closing. Not always be listening."],
+  ["Engineer (the real kind)", -0.3, "Fixes the dishwasher instead of the relationship, but it counts."],
+  ["Academic / researcher", -0.15, "Can't afford a divorce on a postdoc salary."],
+  ["Tradesperson", 0.0, "Solid. Literally load-bearing."],
+  ["Student", 0.1, "Bold to be asking already."],
+  ["Unemployed / between things", 0.4, "Home a lot. Possibly too much."],
+  ["Other / it's complicated", 0.05, "Mysterious. The model is nervous."],
+];
+const INCOMES = [
+  ["Under 25k", 0.45, "Money can't buy love but it does pay for the couples therapy."],
+  ["25k – 50k", 0.2, "Fighting about money, but affordably."],
+  ["50k – 100k", -0.1, "Comfortable enough to argue about where to eat instead."],
+  ["100k – 200k", -0.3, "Two sinks in the bathroom. Marriages have been saved by less."],
+  ["200k – 500k", -0.35, "Problems now solvable by booking a separate hotel room."],
+  ["500k+", -0.15, "Stable, but the prenup has its own lawyer."],
+];
+// Every faith gets the same small nudge: we're roasting you, not ranking religions.
+const FAITH = -0.2, FAITH_LINE = "Community, rituals, and relatives who would never let you hear the end of it.";
+const RELIGIONS = [
+  ["Buddhist", FAITH, "Non-attachment, except to each other."],
+  ["Christian", FAITH, FAITH_LINE],
+  ["Hindu", FAITH, FAITH_LINE],
+  ["Jewish", FAITH, FAITH_LINE],
+  ["Muslim", FAITH, FAITH_LINE],
+  ["Sikh", FAITH, FAITH_LINE],
+  ["Other faith", FAITH, FAITH_LINE],
+  ["Spiritual but not religious", 0.1, "Mercury is in retrograde and so is this relationship."],
+  ["Agnostic", 0.05, "Not sure about God. Not sure about this either."],
+  ["Atheist", 0.1, "No divine plan, just a shared calendar."],
+  ["Astrology", 0.35, "\"We're incompatible, he's a Gemini\" is not admissible in court."],
+  ["Crypto", 0.6, "HODLing everything except the marriage."],
+];
+// Rough tiers, loosely inspired by which countries report higher/lower divorce rates.
+const HIGH = [0.3, "Divorce there is practically a national pastime."];
+const MID = [0.05, "Statistically unremarkable. Congratulations?"];
+const LOW = [-0.3, "Back home, divorce is rarer than a quiet family dinner."];
+const NATIONS = Object.entries({
+  "Argentina": MID, "Australia": MID, "Austria": MID, "Belgium": MID, "Brazil": MID, "Canada": MID,
+  "Chile": LOW, "China": HIGH, "Colombia": LOW, "Czechia": MID, "Denmark": HIGH, "Egypt": MID,
+  "Finland": HIGH, "France": MID, "Georgia": HIGH, "Germany": MID, "Greece": MID, "India": LOW,
+  "Indonesia": MID, "Iran": MID, "Ireland": LOW, "Israel": MID, "Italy": LOW, "Japan": MID,
+  "Kazakhstan": HIGH, "Latvia": HIGH, "Lithuania": HIGH, "Malta": LOW, "Mexico": LOW, "Netherlands": MID,
+  "New Zealand": MID, "Nigeria": MID, "Norway": MID, "Pakistan": MID, "Peru": LOW, "Philippines": [-0.9, "Divorce is not legal there. The model respects a hard constraint."],
+  "Poland": MID, "Portugal": MID, "Russia": HIGH, "Saudi Arabia": MID, "South Africa": LOW, "South Korea": MID,
+  "Spain": MID, "Sri Lanka": LOW, "Sweden": HIGH, "Switzerland": MID, "Türkiye": MID, "Ukraine": HIGH,
+  "United Kingdom": MID, "United States": HIGH, "Vietnam": LOW,
+  "Somewhere else": [0, "No data, so the model is just guessing. More than usual."],
+}).map(([k, v]) => [k, ...v]);
+
+function offspring(n) {
+  if (n === 0) return [0.15, "No kids. Nothing to stay together for except love. Yikes."];
+  if (n === 1) return [-0.15, "One child, who is now the project manager of this marriage."];
+  if (n <= 3) return [-0.35, "Too tired to file the paperwork."];
+  if (n <= 6) return [-0.2, "You're outnumbered. Solidarity is survival."];
+  return [0.1, "That's not a family, that's a small company. HR issues expected."];
+}
+function bodycount(n) {
+  if (n === 0) return [-0.4, "Zero. Nothing to compare against. Bliss."];
+  if (n === 1) return [-0.5, "One. The spreadsheet has a single row."];
+  if (n <= 4) return [0.05, "A reasonable sample size."];
+  if (n <= 9) return [0.25, "Experienced. You know exactly what you're missing."];
+  if (n <= 29) return [0.45, "Double digits. You've seen things."];
+  if (n <= 99) return [0.65, "At this point it's a census."];
+  return [0.9, "Three digits. The model would like to speak to your publicist."];
+}
+
+const VERDICTS = [
+  [15, "Till death do you part. Disgusting.", "Sealed", "lo"],
+  [35, "Solid. Mildly annoying to your single friends.", "Approved", "lo"],
+  [55, "A coin flip with catering.", "Pending", ""],
+  [75, "Keep the receipts. All of them.", "At risk", "hi"],
+  [101, "The lawyer is already typing.", "Doomed", "hi"],
+];
+
+const BASE = -0.4; // ~40% before you open your mouth
+const sigmoid = x => 1 / (1 + Math.exp(-x));
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
+function predict(v) {
+  const pick = (list, label) => list.find(o => o[0] === label);
+  const factors = [
+    ["Occupation", ...pick(OCCUPATIONS, v.occupation).slice(1)],
+    ["Income", ...pick(INCOMES, v.income).slice(1)],
+    ["Religion", ...pick(RELIGIONS, v.religion).slice(1)],
+    ["Nationality", ...pick(NATIONS, v.nationality).slice(1)],
+    ["Offspring", ...offspring(v.offspring)],
+    ["Body count", ...bodycount(v.bodycount)],
+  ];
+  const logit = BASE + factors.reduce((s, f) => s + f[1], 0);
+  const pct = clamp(Math.round(sigmoid(logit) * 100), 1, 99);
+  // Show each factor's effect in percentage points, relative to everything else staying put.
+  const rows = factors.map(([name, d, line]) => ({
+    name, line, points: Math.round((sigmoid(logit) - sigmoid(logit - d)) * 100),
+  }));
+  const [, verdict, stamp, tone] = VERDICTS.find(([max]) => pct < max);
+  return { pct, verdict, stamp, tone, rows };
+}
+
+// --- UI ---
+const $ = id => document.getElementById(id);
+const form = $("f");
+function fill(name, list, placeholder) {
+  const sel = form.elements[name];
+  sel.add(new Option(placeholder, "", true, true));
+  sel.options[0].disabled = true;
+  for (const [label] of list) sel.add(new Option(label, label));
+}
+fill("occupation", OCCUPATIONS, "What do you do all day?");
+fill("income", INCOMES, "Be honest");
+fill("religion", RELIGIONS, "Pick one");
+fill("nationality", NATIONS, "Where are you from?");
+
+let lastText = "";
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const d = new FormData(form);
+  const v = {
+    occupation: d.get("occupation"), income: d.get("income"),
+    religion: d.get("religion"), nationality: d.get("nationality"),
+    offspring: clamp(Math.floor(+d.get("offspring") || 0), 0, 20),
+    bodycount: clamp(Math.floor(+d.get("bodycount") || 0), 0, 999),
+  };
+  const r = predict(v);
+  $("caseno").textContent = String(Date.now()).slice(-6);
+  $("pct").textContent = r.pct + "%";
+  $("pct").className = "pct " + r.tone;
+  $("verdict").textContent = r.verdict;
+  $("stamp").textContent = r.stamp;
+  $("stamp").className = "stamp " + r.tone;
+  $("factors").replaceChildren(...r.rows.map(row => {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = row.name;
+    const s = document.createElement("span");
+    s.className = "delta " + (row.points > 0 ? "hi" : row.points < 0 ? "lo" : "");
+    s.textContent = (row.points > 0 ? "+" : "") + row.points + " pts";
+    const p = document.createElement("p"); p.textContent = row.line;
+    li.append(b, s, p);
+    return li;
+  }));
+  lastText = `Divorcy says my marriage has a ${r.pct}% chance of ending in divorce. "${r.verdict}"`;
+  $("share").textContent = "Copy result";
+  $("result").hidden = false;
+  $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+$("share").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(lastText); $("share").textContent = "Copied"; }
+  catch { $("share").textContent = "Copy failed"; }
+});
+$("again").addEventListener("click", () => {
+  $("result").hidden = true;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+</script>
+</body>
+</html>
