@@ -123,7 +123,7 @@
 
     // Dial: the arc fills to the estimate; the tick marks the average couple.
     const fill = $('gauge-fill');
-    fill.style.stroke = 'var(--' + (r.probability < 0.15 ? 'protect' : 'risk') + ')';
+    fill.style.color = 'var(--' + (r.probability < 0.15 ? 'protect' : 'risk') + ')'; // stroke and glow follow it
     fill.style.strokeDasharray = '0 100';
     $('gauge-mark').style.transform = 'rotate(' + (r.typical * 180 - 90) + 'deg)';
     show('result');
