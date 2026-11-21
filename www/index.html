@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Divorcy Risk Estimate</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Divorcy</h1>
+    <p class="lede">Answer 17 questions about your marriage to get an estimated divorce risk and see which factors drive it.</p>
+    <p class="note">Your answers stay in this browser. Nothing is saved or sent anywhere.</p>
+  </header>
+
+  <form id="quiz" novalidate>
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+    <p id="step-label" class="step-label"></p>
+    <div id="sections"></div>
+    <p id="error" class="error" role="alert" hidden>Please answer every question on this page.</p>
+    <div class="nav">
+      <button type="button" id="back" class="ghost">Back</button>
+      <button type="submit" id="next">Next</button>
+    </div>
+  </form>
+
+  <section id="result" hidden aria-live="polite">
+    <p class="step-label">Your estimate</p>
+    <div class="score">
+      <span id="pct"></span>
+      <span id="band" class="band"></span>
+    </div>
+    <div class="meter"><div id="meter-fill"></div><div class="baseline" id="baseline-mark" title="Typical couple"></div></div>
+    <p id="summary"></p>
+
+    <h2>What raises your risk</h2>
+    <ul id="risks" class="factors"></ul>
+    <h2>What protects you</h2>
+    <ul id="protects" class="factors"></ul>
+
+    <div class="disclaimer">
+      <strong>Read this before taking the number seriously.</strong>
+      This is an educational estimate built from general patterns in marriage research. It is not a
+      diagnosis and cannot predict what will happen to any one couple. If you feel unsafe in your
+      relationship, contact a local domestic violence helpline; if you are worried about your marriage,
+      a couples therapist can help far more than a score.
+    </div>
+    <div class="nav">
+      <button type="button" id="edit" class="ghost">Change answers</button>
+      <button type="button" id="restart">Start over</button>
+    </div>
+  </section>
+</main>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
