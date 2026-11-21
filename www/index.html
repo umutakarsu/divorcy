@@ -10,7 +10,7 @@
 <main>
   <header>
     <h1>Divorcy</h1>
-    <p class="lede">Answer 17 questions about your marriage to get an estimated divorce risk and see which factors drive it.</p>
+    <p class="lede">Answer <span id="question-count">8</span> questions to see your chance of divorcing or breaking up within five years, based on what happened to <span id="study-size">2,593</span> real couples.</p>
     <p class="note">Your answers stay in this browser. Nothing is saved or sent anywhere.</p>
   </header>
 
@@ -18,7 +18,7 @@
     <div class="progress" aria-hidden="true"><div id="bar"></div></div>
     <p id="step-label" class="step-label"></p>
     <div id="sections"></div>
-    <p id="error" class="error" role="alert" hidden>Please answer every question on this page.</p>
+    <p id="error" class="error" role="alert" hidden>Please answer every question on this page with a valid value.</p>
     <div class="nav">
       <button type="button" id="back" class="ghost">Back</button>
       <button type="submit" id="next">Next</button>
@@ -26,12 +26,12 @@
   </form>
 
   <section id="result" hidden aria-live="polite">
-    <p class="step-label">Your estimate</p>
+    <p class="step-label" id="result-label">Your estimate</p>
     <div class="score">
       <span id="pct"></span>
       <span id="band" class="band"></span>
     </div>
-    <div class="meter"><div id="meter-fill"></div><div class="baseline" id="baseline-mark" title="Typical couple"></div></div>
+    <div class="meter"><div id="meter-fill"></div><div class="baseline" id="baseline-mark" title="Average couple in the study"></div></div>
     <p id="summary"></p>
 
     <h2>What raises your risk</h2>
@@ -41,17 +41,20 @@
 
     <div class="disclaimer">
       <strong>Read this before taking the number seriously.</strong>
-      This is an educational estimate built from general patterns in marriage research. It is not a
-      diagnosis and cannot predict what will happen to any one couple. If you feel unsafe in your
-      relationship, contact a local domestic violence helpline; if you are worried about your marriage,
-      a couples therapist can help far more than a score.
+      The estimate comes from a model fitted on Stanford’s “How Couples Meet and Stay Together”
+      survey, which followed US couples from 2009 to 2017. It describes what happened to couples who
+      gave similar answers back then; it cannot predict what will happen to you. The monogamy question
+      is the exception: too few such couples were followed, so its weight is a rough guess. If you feel
+      unsafe in your relationship, contact a local domestic violence helpline.
     </div>
+    <p class="note">Data: Rosenfeld, Thomas &amp; Falcon, <a href="https://purl.stanford.edu/ns183dp7831">How Couples Meet and Stay Together</a>, Stanford University Libraries.</p>
     <div class="nav">
       <button type="button" id="edit" class="ghost">Change answers</button>
       <button type="button" id="restart">Start over</button>
     </div>
   </section>
 </main>
+<script src="coefficients.js"></script>
 <script src="model.js"></script>
 <script src="app.js"></script>
 </body>

@@ -2,7 +2,7 @@
   "name": "divorcy",
   "version": "1.0.0",
   "private": true,
-  "description": "Estimates the likelihood of divorce from a 17-question survey.",
+  "description": "Estimates the chance of divorce or breakup within five years, fitted on the HCMST couples survey.",
   "scripts": {
     "test": "node --test",
     "web": "python3 -m http.server 8000 --directory www",
