@@ -4,3 +4,7 @@ ios/App/build/
 ios/App/App/public/
 ios/DerivedData/
 xcuserdata/
+
+# Raw survey files downloaded by training/train.py
+training/data/
+__pycache__/
