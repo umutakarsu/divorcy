@@ -15,7 +15,12 @@ body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
-main { max-width: 680px; margin: 0 auto; padding: 40px 16px 64px; }
+main {
+  max-width: 680px; margin: 0 auto;
+  /* env() keeps content clear of the iPhone notch and home indicator in the native app. */
+  padding: calc(40px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+           calc(64px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+}
 h1 { font-size: 2rem; margin: 0 0 8px; letter-spacing: -0.02em; }
 h2 { font-size: 1rem; margin: 28px 0 10px; }
 .lede { margin: 0 0 6px; font-size: 1.05rem; }

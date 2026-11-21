@@ -1,0 +1,17 @@
+{
+  "name": "divorcy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Estimates the likelihood of divorce from a 17-question survey.",
+  "scripts": {
+    "test": "node --test",
+    "web": "python3 -m http.server 8000 --directory www",
+    "ios:setup": "cap add ios",
+    "ios": "cap run ios"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2"
+  }
+}

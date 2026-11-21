@@ -3,20 +3,39 @@
 A small web app that estimates the likelihood of divorce from a 17-question
 survey and shows which answers raise or lower the risk.
 
-## Run it
+## Run it on the iPhone simulator (from VS Code)
 
-No build step and no dependencies. Open `index.html` in a browser, or serve the
-folder:
+The web app in `www/` is wrapped as a native iOS app with
+[Capacitor](https://capacitorjs.com). You need a Mac with Xcode (which provides
+the simulator) and Node 22 or newer.
+
+First time only — open the folder in VS Code, open the terminal and run:
 
 ```bash
-python3 -m http.server 8000
+npm install
 ```
 
-Everything runs in the browser. Answers are not stored or sent anywhere.
+```bash
+npm run ios:setup
+```
+
+This generates the Xcode project in `ios/`. After that, press **Cmd+Shift+B**
+(or run `npm run ios`), pick a simulator from the list, and the app builds,
+installs and launches. Re-run it after editing anything in `www/`.
+
+## Run it in a browser
+
+```bash
+npm run web
+```
+
+Then open http://localhost:8000. Opening `www/index.html` directly also works.
+
+Everything runs on the device. Answers are not stored or sent anywhere.
 
 ## How the estimate works
 
-`model.js` is an additive log-odds model. It starts from a baseline risk of 38%
+`www/model.js` is an additive log-odds model. It starts from a baseline risk of 38%
 and each answer multiplies the odds by a factor:
 
 - **Background** — age at marriage, education, parental divorce, previous
@@ -31,10 +50,10 @@ The result is clamped to 3–95% and labelled Low, Moderate, Elevated or High.
 **The weights are hand-set approximations of effects reported in marriage
 research. They are not fitted to data, so the percentage is an educational
 estimate and not a calibrated probability.** To change a weight or add a
-question, edit the `QUESTIONS` list in `model.js`; the form is generated from it.
+question, edit the `QUESTIONS` list in `www/model.js`; the form is generated from it.
 
 ## Tests
 
 ```bash
-node --test
+npm test
 ```

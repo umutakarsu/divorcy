@@ -1,7 +1,7 @@
 // Run with: node --test
 const test = require('node:test');
 const assert = require('node:assert');
-const { QUESTIONS, BASELINE, predict } = require('./model.js');
+const { QUESTIONS, BASELINE, predict } = require('./www/model.js');
 
 // Build an answer set by picking, per question, the option chosen by `pick`.
 function answers(pick) {
