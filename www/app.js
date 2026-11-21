@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const { QUESTIONS, HORIZON_YEARS, DATA, predict } = window.Divorcy;
+  const { QUESTIONS, HORIZON_YEARS, predict } = window.Divorcy;
   const $ = (id) => document.getElementById(id);
   const el = (tag, props, ...children) => {
     const node = Object.assign(document.createElement(tag), props);
@@ -13,7 +13,6 @@
   let index = 0; // question currently shown
 
   $('question-count').textContent = QUESTIONS.length;
-  $('study-size').textContent = DATA.couples.toLocaleString('en');
 
   function show(screen) {
     for (const id of ['intro', 'quiz', 'result']) $(id).hidden = id !== screen;
