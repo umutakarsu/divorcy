@@ -1,27 +1,17 @@
 :root {
-  --bg: #f7f3ee; --card: #fffdfa; --text: #231c1e; --muted: #6f6468;
-  --line: #e4dbd3; --accent: #a8324a; --accent-soft: #f6e4e6; --accent-text: #ffffff;
-  --risk: #b8432f; --protect: #2f7d62;
+  /* Neon pink on near-black. One theme for every device: neon needs a dark background. */
+  color-scheme: dark;
+  --bg: #0b0010; --card: #18041f; --text: #fff2fb; --muted: #c9a3c4;
+  --line: #40124a; --accent: #ff2bb1; --accent-soft: #3a0a35; --accent-text: #16000f;
+  --risk: #ff2bb1; --protect: #35f2d0;
+  --glow: 0 0 6px rgb(255 43 177 / .9), 0 0 22px rgb(255 43 177 / .55);
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-/* Dark theme: follows the system unless a host sets data-theme explicitly. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #171314; --card: #211b1d; --text: #efe8e4; --muted: #a3979a;
-    --line: #3a3033; --accent: #e8839a; --accent-soft: #3a2228; --accent-text: #1c0f13;
-    --risk: #e58d78; --protect: #74c2a1;
-  }
-}
-:root[data-theme="dark"] {
-    --bg: #171314; --card: #211b1d; --text: #efe8e4; --muted: #a3979a;
-    --line: #3a3033; --accent: #e8839a; --accent-soft: #3a2228; --accent-text: #1c0f13;
-    --risk: #e58d78; --protect: #74c2a1;
 }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.55 var(--sans); }
+body { margin: 0; background: radial-gradient(120% 70% at 50% -10%, #2a0530 0%, var(--bg) 60%) fixed var(--bg); color: var(--text); font: 17px/1.55 var(--sans); }
 main {
   max-width: 640px; margin: 0 auto; min-height: 100vh; min-height: 100dvh;
   display: flex; flex-direction: column;
@@ -95,7 +85,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
 .gauge svg { display: block; width: 100%; overflow: visible; }
 .gauge path { fill: none; stroke-width: 14; stroke-linecap: round; }
 .gauge-track { stroke: var(--line); }
-.gauge-fill { stroke: var(--accent); stroke-dasharray: 0 100; transition: stroke-dasharray 1s cubic-bezier(.2,.8,.2,1); }
+.gauge-fill { color: var(--accent); stroke: currentColor; stroke-dasharray: 0 100; transition: stroke-dasharray 1s cubic-bezier(.2,.8,.2,1); }
 .gauge-mark { stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; transform-origin: 100px 100px; }
 .gauge-text { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 #pct { font: 600 clamp(2.6rem, 11vw, 3.6rem)/1 var(--serif); letter-spacing: -0.02em; }
@@ -124,3 +114,14 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
 
 /* Questions sit at a fixed height so the layout does not jump between screens. */
 #quiz { margin: 6vh 0 auto; }
+
+/* Neon glow */
+.brand, h1 { text-shadow: var(--glow); }
+h1 { color: var(--accent); }
+.mark { filter: drop-shadow(0 0 5px var(--accent)); }
+.primary { box-shadow: var(--glow); }
+.primary:hover, .secondary:hover { box-shadow: var(--glow); }
+#bar { box-shadow: var(--glow); }
+.option[aria-pressed="true"], .option:hover { box-shadow: 0 0 14px -2px rgb(255 43 177 / .6); }
+.gauge-fill { filter: drop-shadow(0 0 6px currentColor); }
+#pct { text-shadow: 0 0 18px rgb(255 43 177 / .5); }
