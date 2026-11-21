@@ -3,12 +3,18 @@
   --line: #dedad2; --accent: #3d5a80; --accent-text: #ffffff;
   --risk: #c0553f; --protect: #3f8a6b; --warn-bg: #fbf1dc;
 }
+/* Dark theme: follows the system unless a host sets data-theme explicitly. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #15171a; --card: #1e2125; --text: #e8e6e1; --muted: #9aa1ab;
     --line: #33383f; --accent: #8fb0dc; --accent-text: #10151c;
     --risk: #e08a76; --protect: #74c2a1; --warn-bg: #2e2818;
   }
+}
+:root[data-theme="dark"] {
+    --bg: #15171a; --card: #1e2125; --text: #e8e6e1; --muted: #9aa1ab;
+    --line: #33383f; --accent: #8fb0dc; --accent-text: #10151c;
+    --risk: #e08a76; --protect: #74c2a1; --warn-bg: #2e2818;
 }
 * { box-sizing: border-box; }
 body {
