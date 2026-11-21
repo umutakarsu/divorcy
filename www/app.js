@@ -2,182 +2,133 @@
   'use strict';
   const { QUESTIONS, HORIZON_YEARS, DATA, predict } = window.Divorcy;
   const $ = (id) => document.getElementById(id);
+  const el = (tag, props, ...children) => {
+    const node = Object.assign(document.createElement(tag), props);
+    node.append(...children);
+    return node;
+  };
 
-  const sections = [...new Set(QUESTIONS.map((q) => q.section))];
-  let step = 0;
+  const UNITS = { duration: 'years', age: 'years old' };
+  const answers = {};
+  let index = 0; // question currently shown
 
   $('question-count').textContent = QUESTIONS.length;
   $('study-size').textContent = DATA.couples.toLocaleString('en');
 
-  // Render every question once, grouped into one page per section.
-  for (const name of sections) {
-    const page = document.createElement('div');
-    page.className = 'page';
-    for (const q of QUESTIONS.filter((x) => x.section === name)) {
-      const fs = document.createElement('fieldset');
-      fs.dataset.id = q.id;
-      const legend = document.createElement('legend');
-      legend.textContent = q.text;
-      fs.append(legend);
-      if (q.type === 'number') {
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.name = q.id;
-        input.min = q.min;
-        input.max = q.max;
-        input.inputMode = 'numeric';
-        input.setAttribute('aria-label', q.text);
-        fs.append(input);
-      } else {
-        const opts = document.createElement('div');
-        opts.className = 'options';
-        q.options.forEach(([text], i) => {
-          const label = document.createElement('label');
-          const input = document.createElement('input');
-          input.type = 'radio';
-          input.name = q.id;
-          input.value = i;
-          const span = document.createElement('span');
-          span.textContent = text;
-          label.append(input, span);
-          opts.append(label);
-        });
-        fs.append(opts);
-      }
-      page.append(fs);
-    }
-    $('sections').append(page);
-  }
-  const pages = [...document.querySelectorAll('.page')];
-
-  // Only valid answers are returned; a blank or out-of-range number counts as unanswered.
-  function readAnswers() {
-    const a = {};
-    for (const q of QUESTIONS) {
-      if (q.type === 'number') {
-        const raw = document.querySelector('input[name="' + q.id + '"]').value.trim();
-        const n = Number(raw);
-        if (raw !== '' && n >= q.min && n <= q.max) a[q.id] = n;
-      } else {
-        const checked = document.querySelector('input[name="' + q.id + '"]:checked');
-        if (checked) a[q.id] = Number(checked.value);
-      }
-    }
-    return a;
+  function show(screen) {
+    for (const id of ['intro', 'quiz', 'result']) $(id).hidden = id !== screen;
+    window.scrollTo({ top: 0 });
   }
 
-  function showStep() {
-    pages.forEach((p, i) => { p.hidden = i !== step; });
-    $('step-label').textContent = 'Part ' + (step + 1) + ' of ' + sections.length + ' — ' + sections[step];
-    $('back').disabled = step === 0;
-    $('next').textContent = step === sections.length - 1 ? 'See my estimate' : 'Next';
+  function showQuestion(i) {
+    index = i;
+    const q = QUESTIONS[i];
+    $('step-label').textContent = (i + 1) + ' of ' + QUESTIONS.length;
+    $('bar').style.width = (i / QUESTIONS.length * 100) + '%';
+    $('question').textContent = q.text;
     $('error').hidden = true;
-    updateBar();
-  }
 
-  function updateBar() {
-    $('bar').style.width = (Object.keys(readAnswers()).length / QUESTIONS.length * 100) + '%';
-  }
-
-  // Marks unanswered questions on the current page; returns true if complete.
-  function validatePage() {
-    const answers = readAnswers();
-    let ok = true;
-    for (const fs of pages[step].querySelectorAll('fieldset')) {
-      const missing = !(fs.dataset.id in answers);
-      fs.classList.toggle('missing', missing);
-      if (missing && ok) fs.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (missing) ok = false;
+    if (q.type === 'choice') {
+      $('answer').replaceChildren(el('div', { className: 'options' }, ...q.options.map(([text], n) => {
+        const b = el('button', { type: 'button', className: 'option', textContent: text });
+        b.setAttribute('aria-pressed', String(answers[q.id] === n));
+        b.addEventListener('click', () => {
+          answers[q.id] = n;
+          for (const other of $('answer').querySelectorAll('.option')) other.setAttribute('aria-pressed', String(other === b));
+          setTimeout(next, 180); // let the selection show before moving on
+        });
+        return b;
+      })));
+    } else {
+      const input = el('input', { type: 'number', id: 'number', min: q.min, max: q.max, inputMode: 'numeric',
+        value: answers[q.id] ?? '' });
+      input.setAttribute('aria-label', q.text);
+      $('answer').replaceChildren(el('div', { className: 'number-row' }, input,
+        el('span', { className: 'unit', textContent: UNITS[q.id] || '' }),
+        el('button', { type: 'submit', className: 'primary', textContent: 'Continue' })));
     }
-    $('error').hidden = ok;
-    return ok;
+
+    // Restart the entrance animation and move focus for keyboard and screen-reader users.
+    $('quiz').style.animation = 'none';
+    void $('quiz').offsetWidth;
+    $('quiz').style.animation = '';
+    show('quiz');
+    (q.type === 'number' ? $('number') : $('question')).focus({ preventScroll: true });
   }
+
+  function next() {
+    if (index + 1 < QUESTIONS.length) showQuestion(index + 1);
+    else showResult();
+  }
+
+  // Number questions are submitted with Continue or Enter.
+  $('quiz').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = QUESTIONS[index];
+    if (q.type !== 'number') return;
+    const raw = $('number').value.trim();
+    const n = Number(raw);
+    if (raw === '' || !(n >= q.min && n <= q.max)) {
+      $('error').textContent = 'Enter a number between ' + q.min + ' and ' + q.max + '.';
+      $('error').hidden = false;
+      return;
+    }
+    answers[q.id] = n;
+    next();
+  });
+
+  $('back').addEventListener('click', () => (index === 0 ? show('intro') : showQuestion(index - 1)));
+  $('start').addEventListener('click', () => showQuestion(0));
+  $('edit').addEventListener('click', () => showQuestion(0));
+  $('restart').addEventListener('click', () => {
+    for (const k of Object.keys(answers)) delete answers[k];
+    show('intro');
+  });
 
   function answerText(q, v) {
     if (q.type === 'choice') return q.options[v][0].toLowerCase();
     return q.id === 'duration' ? v + (v === 1 ? ' year' : ' years') : String(v);
   }
 
-  function fillFactors(list, factors, emptyText, answers) {
-    list.replaceChildren();
+  function fillFactors(list, factors, emptyText) {
     // Ignore answers that sit almost exactly on the survey average.
     factors = factors.filter((f) => Math.abs(f.contribution) >= 0.05);
-    if (!factors.length) {
-      const li = document.createElement('li');
-      const span = document.createElement('span');
-      span.className = 'empty';
-      span.textContent = emptyText;
-      li.append(span);
-      list.append(li);
-      return;
-    }
+    if (!factors.length) return list.replaceChildren(el('li', { className: 'empty', textContent: emptyText }));
     const max = Math.abs(factors[0].contribution);
-    for (const f of factors) {
-      const li = document.createElement('li');
-      const name = document.createElement('span');
+    list.replaceChildren(...factors.map((f) => {
       const q = QUESTIONS.find((x) => x.id === f.id);
-      name.textContent = f.label + ': ' + answerText(q, answers[f.id]);
-      const track = document.createElement('div');
-      track.className = 'track';
-      const fill = document.createElement('div');
-      fill.className = 'fill';
+      const fill = el('div', { className: 'fill' });
       fill.style.width = Math.max(6, Math.abs(f.contribution) / max * 100) + '%';
-      track.append(fill);
-      li.append(name, track);
-      list.append(li);
-    }
+      return el('li', {}, f.label + ' ', el('span', { className: 'value', textContent: answerText(q, answers[f.id]) }),
+        el('div', { className: 'track' }, fill));
+    }));
   }
 
-  const percent = (p) => (p < 0.01 ? 'under 1%' : Math.min(99, Math.round(p * 100)) + '%');
+  const percent = (p) => (p < 0.01 ? '<1%' : Math.min(99, Math.round(p * 100)) + '%');
 
   function showResult() {
-    const answers = readAnswers();
     const r = predict(answers);
-    const outcome = r.married ? 'divorce or separate' : 'break up';
     const group = r.married ? 'married' : 'unmarried';
-    $('result-label').textContent = 'Chance you ' + outcome + ' within ' + HORIZON_YEARS + ' years';
+    $('result-label').textContent = 'Chance you ' + (r.married ? 'divorce or separate' : 'break up')
+      + ' within ' + HORIZON_YEARS + ' years';
     $('pct').textContent = percent(r.probability);
     $('band').textContent = r.band + ' risk';
     $('band').className = 'band ' + r.band.toLowerCase();
-    $('meter-fill').style.width = Math.max(1, r.probability * 100) + '%';
-    $('baseline-mark').style.left = r.typical * 100 + '%';
     const gap = r.probability - r.typical;
     $('summary').textContent = (Math.abs(gap) < 0.005 ? 'About the same as' : gap > 0 ? 'Higher than' : 'Lower than')
-      + ' the average ' + group + ' couple in the study (' + percent(r.typical) + ', the marker on the bar).';
-    fillFactors($('risks'), r.factors.filter((f) => f.contribution > 0),
-      'Nothing in your answers raises your risk above the average ' + group + ' couple.', answers);
-    fillFactors($('protects'), r.factors.filter((f) => f.contribution < 0),
-      'Nothing in your answers lowers your risk below the average ' + group + ' couple.', answers);
-    $('quiz').hidden = true;
-    $('result').hidden = false;
-    window.scrollTo({ top: 0 });
+      + ' the average ' + group + ' couple in the study, who had a ' + percent(r.typical)
+      + ' chance (the tick on the dial).';
+    fillFactors($('risks'), r.factors.filter((f) => f.contribution > 0), 'Nothing stands out compared with the average ' + group + ' couple.');
+    fillFactors($('protects'), r.factors.filter((f) => f.contribution < 0), 'Nothing stands out compared with the average ' + group + ' couple.');
+
+    // Dial: the arc fills to the estimate; the tick marks the average couple.
+    const fill = $('gauge-fill');
+    fill.style.stroke = 'var(--' + (r.probability < 0.15 ? 'protect' : 'risk') + ')';
+    fill.style.strokeDasharray = '0 100';
+    $('gauge-mark').style.transform = 'rotate(' + (r.typical * 180 - 90) + 'deg)';
+    show('result');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fill.style.strokeDasharray = Math.max(0.5, r.probability * 100) + ' 100';
+    }));
   }
-
-  const onAnswer = (e) => {
-    e.target.closest('fieldset').classList.remove('missing');
-    updateBar();
-  };
-  $('quiz').addEventListener('change', onAnswer);
-  $('quiz').addEventListener('input', onAnswer);
-  $('quiz').addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!validatePage()) return;
-    if (step === sections.length - 1) return showResult();
-    step++;
-    showStep();
-    window.scrollTo({ top: 0 });
-  });
-  $('back').addEventListener('click', () => { step--; showStep(); });
-  $('edit').addEventListener('click', () => {
-    $('result').hidden = true;
-    $('quiz').hidden = false;
-    step = 0;
-    showStep();
-  });
-  $('restart').addEventListener('click', () => {
-    $('quiz').reset();
-    $('edit').click();
-  });
-
-  showStep();
 })();

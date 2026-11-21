@@ -3,55 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Eight questions, one honest number: your chance of splitting up within five years, based on 2,593 real couples.">
 <title>Divorcy Risk Estimate</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <main>
-  <header>
-    <h1>Divorcy</h1>
-    <p class="lede">Answer <span id="question-count">8</span> questions to see your chance of divorcing or breaking up within five years, based on what happened to <span id="study-size">2,593</span> real couples.</p>
-    <p class="note">Your answers stay in this browser. Nothing is saved or sent anywhere.</p>
+  <header class="brand">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 28S4 20.5 4 12a6.5 6.5 0 0 1 12-3.4l-2.6 4.6 4.2 2.8-2.4 4.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M19.5 7.2A6.5 6.5 0 0 1 28 12c0 8.5-12 16-12 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Divorcy</span>
   </header>
 
-  <form id="quiz" novalidate>
-    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
-    <p id="step-label" class="step-label"></p>
-    <div id="sections"></div>
-    <p id="error" class="error" role="alert" hidden>Please answer every question on this page with a valid value.</p>
-    <div class="nav">
-      <button type="button" id="back" class="ghost">Back</button>
-      <button type="submit" id="next">Next</button>
+  <!-- Intro -->
+  <section id="intro" class="screen">
+    <p class="eyebrow">Relationship risk estimate</p>
+    <h1>Will you two make it?</h1>
+    <p class="lede"><span id="question-count">8</span> questions. One number: your chance of divorcing or breaking up within five years, based on what actually happened to <span id="study-size">2,593</span> couples.</p>
+    <button type="button" id="start" class="primary">Start</button>
+    <ul class="facts">
+      <li><strong>About a minute</strong><span>Mostly one tap per question</span></li>
+      <li><strong>Private</strong><span>Answers never leave this device</span></li>
+      <li><strong>Real data</strong><span>Stanford couples survey, 2009–2017</span></li>
+    </ul>
+  </section>
+
+  <!-- One question at a time -->
+  <form id="quiz" class="screen" hidden novalidate>
+    <div class="progress-row">
+      <button type="button" id="back" class="link" aria-label="Previous question">← Back</button>
+      <span id="step-label" class="eyebrow"></span>
     </div>
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+    <h2 id="question" tabindex="-1"></h2>
+    <div id="answer"></div>
+    <p id="error" class="error" role="alert" hidden></p>
   </form>
 
-  <section id="result" hidden aria-live="polite">
-    <p class="step-label" id="result-label">Your estimate</p>
-    <div class="score">
-      <span id="pct"></span>
-      <span id="band" class="band"></span>
+  <!-- Result -->
+  <section id="result" class="screen" hidden aria-live="polite">
+    <p class="eyebrow" id="result-label"></p>
+    <div class="gauge">
+      <svg viewBox="0 0 200 112" aria-hidden="true">
+        <path class="gauge-track" d="M 16 100 A 84 84 0 0 1 184 100" pathLength="100"/>
+        <path class="gauge-fill" id="gauge-fill" d="M 16 100 A 84 84 0 0 1 184 100" pathLength="100"/>
+        <line class="gauge-mark" id="gauge-mark" x1="100" y1="6" x2="100" y2="26"/>
+      </svg>
+      <div class="gauge-text">
+        <span id="pct"></span>
+        <span id="band" class="band"></span>
+      </div>
     </div>
-    <div class="meter"><div id="meter-fill"></div><div class="baseline" id="baseline-mark" title="Average couple in the study"></div></div>
-    <p id="summary"></p>
+    <p id="summary" class="summary"></p>
 
-    <h2>What raises your risk</h2>
-    <ul id="risks" class="factors"></ul>
-    <h2>What protects you</h2>
-    <ul id="protects" class="factors"></ul>
+    <div class="columns">
+      <div>
+        <h3>What raises your risk</h3>
+        <ul id="risks" class="factors"></ul>
+      </div>
+      <div>
+        <h3>What protects you</h3>
+        <ul id="protects" class="factors"></ul>
+      </div>
+    </div>
 
-    <div class="disclaimer">
-      <strong>Read this before taking the number seriously.</strong>
-      The estimate comes from a model fitted on Stanford’s “How Couples Meet and Stay Together”
+    <div class="actions">
+      <button type="button" id="edit" class="secondary">Change answers</button>
+      <button type="button" id="restart" class="primary">Start over</button>
+    </div>
+
+    <details class="disclaimer">
+      <summary>How seriously should I take this?</summary>
+      <p>The estimate comes from a model fitted on Stanford’s “How Couples Meet and Stay Together”
       survey, which followed US couples from 2009 to 2017. It describes what happened to couples who
-      gave similar answers back then; it cannot predict what will happen to you. The monogamy question
-      is the exception: too few such couples were followed, so its weight is a rough guess. If you feel
-      unsafe in your relationship, contact a local domestic violence helpline.
-    </div>
-    <p class="note">Data: Rosenfeld, Thomas &amp; Falcon, <a href="https://purl.stanford.edu/ns183dp7831">How Couples Meet and Stay Together</a>, Stanford University Libraries.</p>
-    <div class="nav">
-      <button type="button" id="edit" class="ghost">Change answers</button>
-      <button type="button" id="restart">Start over</button>
-    </div>
+      gave similar answers back then; it cannot predict what will happen to you.</p>
+      <p>The monogamy question is the exception: too few such couples were followed, so its weight is
+      a rough guess.</p>
+      <p>If you feel unsafe in your relationship, contact a local domestic violence helpline.</p>
+      <p class="note">Data: Rosenfeld, Thomas &amp; Falcon, <a href="https://purl.stanford.edu/ns183dp7831">How Couples Meet and Stay Together</a>, Stanford University Libraries.</p>
+    </details>
   </section>
 </main>
 <script src="coefficients.js"></script>
